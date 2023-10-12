@@ -5,23 +5,9 @@ var ocrDemo = {
     BLUE: '#0000FF',
     data: [],
     isDrawing: false,
+    trainArray: [],
 
-    onLoadFunction: function(){
-        var canvas = document.getElementById("canvas");
-        var ctx = canvas.getContext("2d");
-        this.drawGrid(ctx);
-        canvas.addEventListener("mousedown", function(e) {
-            this.onMouseDown(e, ctx, canvas);
-        });
-        canvas.addEventListener("mousemove", function(e) {
-            this.onMouseMove(e, ctx, canvas);
-        });
-    
-        canvas.addEventListener("mouseup", function(e) {
-            this.onMouseUp(e, canvas);
-        });
-    },
-
+   
     drawGrid: function(ctx) {
         for (var x = this.PIXEL_WIDTH, y = this.PIXEL_WIDTH; 
             x < this.CANVAS_WIDTH; x += this.PIXEL_WIDTH, 
@@ -39,35 +25,16 @@ var ocrDemo = {
             }
     },
 
-    
 
-    onMouseMove: function(e, ctx, canvas) {
-        this.drawGrid(ctx);
-        if (!this.isDrawing) {
-            return;
-        }
-        this.fillSquare(ctx, 
-            e.clientX - canvas.offsetLeft, e.clientY - canvas.offsetTop);
-    },
-
-    onMouseDown: function(e, ctx, canvas) {
-        this.drawGrid(ctx);
-        this.isDrawing = true;
-        this.fillSquare(ctx, 
-            e.clientX - canvas.offsetLeft, e.clientY - canvas.offsetTop);
-    },
-
-    onMouseUp: function(e) {
-        this.drawGrid(ctx);
-        this.isDrawing = false;
-    },
-
-    fillSquare: function(ctx, x, y) {
+    fillSquare: function(ctx, x, y, reset) {
         var xPixel = Math.floor(x / this.PIXEL_WIDTH);
         var yPixel = Math.floor(y / this.PIXEL_WIDTH);
         this.data[((xPixel - 1)  * this.TRANSLATED_WIDTH + yPixel) - 1] = 1;
 
-        ctx.fillStyle = "black";
+        if(!reset)
+            ctx.fillStyle = "black";
+        else 
+            ctx.fillStyle = "white";
         ctx.fillRect(xPixel * this.PIXEL_WIDTH, yPixel * this.PIXEL_WIDTH, 
             this.PIXEL_WIDTH, this.PIXEL_WIDTH);
     },
@@ -121,6 +88,30 @@ var ocrDemo = {
         alert("Error occurred while connecting to server: " + e.target.statusText);
     }, 
 
+    onLoadFunction: function(canvas, ctx){
+        var canvas = document.getElementById("canvas");
+        var ctx = canvas.getContext("2d");
+        this.drawGrid(ctx);
+        canvas.addEventListener("mousedown", function(e) {
+            onMouseDown(e, ctx, canvas);
+        });
+        canvas.addEventListener("mousemove", function(e) {
+            onMouseMove(e, ctx, canvas);
+        });
+    
+        canvas.addEventListener("mouseup", function(e) {
+        onMouseUp(e, canvas);
+        });
+    },
+
+    resetCanvas : function(){
+        var canvas = document.getElementById("canvas");
+        var ctx = canvas.getContext("2d");
+        ctx.clearRect(0, 0, this.CANVAS_WIDTH, this.CANVAS_WIDTH);
+        this.drawGrid(ctx);
+    },
+
+
     sendData: function(json){
         var xmlHttp = new XMLHttpRequest();
         xmlHttp.open('POST', this.HOST + ":" + this.PORT, false);
@@ -131,4 +122,22 @@ var ocrDemo = {
         xmlHttp.setRequestHeader("Connection", "close");
         xmlHttp.send(msg);
     }
+}
+
+onMouseMove = function(e, ctx, canvas) {
+    if (!ocrDemo.isDrawing) {
+        return;
+    }
+    ocrDemo.fillSquare(ctx, 
+        e.clientX - canvas.offsetLeft, e.clientY - canvas.offsetTop, false);
+}
+
+onMouseDown = function(e, ctx, canvas) {
+    ocrDemo.isDrawing = true;
+    ocrDemo.fillSquare(ctx, 
+        e.clientX - canvas.offsetLeft, e.clientY - canvas.offsetTop, false);
+}
+
+onMouseUp = function(e) {
+    ocrDemo.isDrawing = false;
 }
